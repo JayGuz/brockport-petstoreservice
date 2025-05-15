@@ -50,9 +50,9 @@ public class PostInventoryByPetTypeTests
                         .and()
                         .body(new DogEntity(AnimalType.DOMESTIC, FUR, Gender.FEMALE, Breed.GERMAN_SHEPHERD,
                                 new BigDecimal("225.00")))
-                .when()
+                        .when()
                         .post("inventory/petType/DOG")
-                .then()
+                        .then()
                         .log().all()
                         .assertThat().statusCode(200)
                         .assertThat().contentType("application/json")
@@ -103,26 +103,26 @@ public class PostInventoryByPetTypeTests
     @DisplayName("Post Pet Entity By Invalid Pet Entity Tests")
     public Stream<DynamicTest> postInventoryInvalidPetEntityTest()
     {
-       RestAssured.registerParser("application/json", Parser.JSON);
-       BadRequestResponseBody body =  given()
-               .headers(headers)
-               .and()
-               .body(new DogEntity(AnimalType.DOMESTIC, FUR, Gender.FEMALE, Breed.GERMAN_SHEPHERD,
-                       new BigDecimal("225.00")))
-               .when()
-               .post("inventory/petType/FROGGER")
-               .then()
-               .log().all()
-               .assertThat().statusCode(400)
-               .assertThat().contentType("application/json")
-               .extract()
-               .jsonPath()
-               .getObject(".", BadRequestResponseBody.class);
+        RestAssured.registerParser("application/json", Parser.JSON);
+        BadRequestResponseBody body =  given()
+                .headers(headers)
+                .and()
+                .body(new DogEntity(AnimalType.DOMESTIC, FUR, Gender.FEMALE, Breed.GERMAN_SHEPHERD,
+                        new BigDecimal("225.00")))
+                .when()
+                .post("inventory/petType/FROGGER")
+                .then()
+                .log().all()
+                .assertThat().statusCode(400)
+                .assertThat().contentType("application/json")
+                .extract()
+                .jsonPath()
+                .getObject(".", BadRequestResponseBody.class);
 
         return body.executeTests("Bad Request", "Failed to convert value of type 'java.lang.String' to " +
-                 "required type 'com.petstore.animals.attributes.PetType'; Failed to convert from type " +
-                 "[java.lang.String] to type [@org.springframework.web.bind.annotation.PathVariable " +
-                 "com.petstore.animals.attributes.PetType] for value [FROGGER]",
+                        "required type 'com.petstore.animals.attributes.PetType'; Failed to convert from type " +
+                        "[java.lang.String] to type [@org.springframework.web.bind.annotation.PathVariable " +
+                        "com.petstore.animals.attributes.PetType] for value [FROGGER]",
                 "/inventory/petType/FROGGER", 400).stream();
     }
 

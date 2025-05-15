@@ -342,4 +342,51 @@ public class PetStoreServiceTests
         return inventoryTests.stream();
     }
     //What other tests could we add here?
+
+    @Test
+    @Order(5)
+    @DisplayName("Find Pet By ID and Type Test")
+    public void findPetByIdAndTypeTest() throws PetNotFoundSaleException, DuplicatePetStoreRecordException, PetDataStoreException {
+        // Select a pet to be found
+        PetEntity targetPet = myPets.get(0); // First dog in the list
+        int petId = targetPet.getPetId();
+        PetType petType = targetPet.getPetType();
+
+        // Mock the repository method
+        Mockito.doReturn(targetPet).when(petRepository).findPetByPetTypeAndPetId(petType, petId);
+
+        // Using the correct method name and parameter order from the actual service
+        PetEntity foundPet = petService.getPetByIdAndType(petType, petId);
+
+        // Verify the repository method was called with correct parameters
+        verify(petRepository).findPetByPetTypeAndPetId(
+                (PetType) petTypeCaptor.capture(),
+                (Integer) petIdCaptor.capture()
+        );
+
+        // Verify the captured arguments match what was passed
+        assertEquals(petType, petTypeCaptor.getValue());
+        assertEquals(petId, petIdCaptor.getValue());
+
+        // Verify the returned pet is the expected one
+        assertNotNull(foundPet);
+        assertEquals(targetPet, foundPet);
+        assertEquals(petId, foundPet.getPetId());
+        assertEquals(petType, foundPet.getPetType());
+    }
+
+    @Test
+    @DisplayName("Add Duplicate PetEntity Throws Exception")
+    public void addDuplicatePetThrowsException() throws PetDataStoreException {
+        // Given
+        PetEntity duplicateDog = myPets.get(0); // Existing dog
+        Mockito.doReturn(myPets).when(petRepository).getPetInventory();
+
+        // When & Then
+        assertThrows(DuplicatePetStoreRecordException.class, () -> {
+            petService.addInventory(PetType.DOG, duplicateDog);
+        });
+
+        verify(petRepository, times(1)).getPetInventory();
+    }
 }

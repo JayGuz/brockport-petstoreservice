@@ -2,6 +2,7 @@ package com.petstoreservices.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.petstore.AnimalType;
 import com.petstore.PetEntity;
 import com.petstore.animals.attributes.PetType;
 import com.petstore.exceptions.DuplicatePetStoreRecordException;
@@ -25,7 +26,7 @@ public class PetInventoryController
     @Autowired
     private PetInventoryService inventoryService;
 
-   public PetInventoryController()
+    public PetInventoryController()
     {
 
     }
@@ -60,8 +61,8 @@ public class PetInventoryController
      * @return - Http status and response body
      */
     @RequestMapping(value = "/inventory/search",
-                    params={"petType", "petId"},
-                    method = RequestMethod.GET)
+            params={"petType", "petId"},
+            method = RequestMethod.GET)
     public ResponseEntity<?> findPetByIdAndPetType(@RequestParam ("petType") PetType petType,
                                                    @RequestParam("petId") int petId)
     {
@@ -69,7 +70,7 @@ public class PetInventoryController
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try{
             responseBody = gson.toJson(
-                       this.inventoryService.getPetByIdAndType(petType, petId));
+                    this.inventoryService.getPetByIdAndType(petType, petId));
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         }catch(DuplicatePetStoreRecordException | PetNotFoundSaleException e)
         {
@@ -164,8 +165,8 @@ public class PetInventoryController
      * @return - HTTP status code and response body
      */
     @RequestMapping(value="inventory/update",
-                    params = {"petType", "petId"},
-                    method= RequestMethod.PUT)
+            params = {"petType", "petId"},
+            method= RequestMethod.PUT)
     public ResponseEntity<?> updateInventory(@RequestParam ("petType") PetType petType,
                                              @RequestParam ("petId") int petId,
                                              @RequestBody PetEntity petItem)
@@ -219,5 +220,42 @@ public class PetInventoryController
             f.printStackTrace();
             return new ResponseEntity<>("Issue with Reading Json file", HttpStatus.NO_CONTENT);
         }
+    }
+
+    /**
+     * GetRequest for a specific animal type
+     * <br>url: <a href="http://localhost:8080/inventory/search/animal/DOMESTIC">http://localhost:8080/inventory/search/animal/DOMESTIC</a>
+     * @return - Http status and response body
+     */
+    @RequestMapping("/inventory/search/animal/{animalType}")
+    public ResponseEntity<?> findPetByAnimalType(@PathVariable ("animalType") AnimalType animalType)
+    {
+        String responseBody;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try{
+            responseBody = gson.toJson(
+                    this.inventoryService.getPetsByAnimalType(animalType));
+            System.out.println("Exception NOT  caught");
+            return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        }catch(PetNotFoundSaleException e)
+        {
+            System.out.println("Exception caught");
+            responseBody = "The animalType [" + animalType + "] is not supported!";
+            return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+        }catch( PetDataStoreException f)
+        {
+            f.printStackTrace();
+            return new ResponseEntity<>("Issue with Reading Json file", HttpStatus.NO_CONTENT);
+        }
+    }
+
+    @PutMapping("/inventory/petType/{petType}/petId/{petId}")
+    public ResponseEntity<PetEntity> updatePet(
+            @PathVariable PetType petType,
+            @PathVariable int petId,
+            @RequestBody PetEntity updatedPet) throws Exception {
+
+        PetEntity result = inventoryService.updateInventoryByPetIdAndPetType(petType, petId, updatedPet);
+        return ResponseEntity.ok(result);
     }
 }

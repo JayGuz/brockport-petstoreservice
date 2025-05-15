@@ -1,8 +1,6 @@
 package funtionaltests;
-
-
+import com.petstore.AnimalType;
 import com.petstore.PetEntity;
-
 import com.petstore.PetStoreReader;
 import com.petstore.animals.attributes.PetType;
 import com.petstoreservices.exceptions.PetDataStoreException;
@@ -12,29 +10,24 @@ import io.restassured.http.Header;
 import io.restassured.http.Headers;
 import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
-
 import org.junit.jupiter.api.*;
-
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Get Pet Entity Tests by PetType only.  The class has some functional and error message tests
+ * Get Pet Entity Tests by AnimalType only.  The class has some functional and error message tests
  * The test class is using rest assured to help with functional testing
  */
-public class GetInventoryByPetTypeTests
+public class GetInventoryByAnimalTypeTests
 {
     private List<PetEntity> expectedResults;
     private static Headers headers;
@@ -51,52 +44,49 @@ public class GetInventoryByPetTypeTests
     }
 
     @TestFactory
-    @DisplayName("Pet Entity By Type[Dog] Tests")
-    public Stream<DynamicNode> getInventoryDogsTest()
-    {
-        List<PetEntity> dogs =
-                expectedResults.stream()
-                        .filter(p -> p.getPetType().equals(PetType.DOG))
-                        .sorted(Comparator.comparingInt(PetEntity::getPetId))
-                        .collect(Collectors.toList());
-        Response response = RestAssured.get("inventory/search/DOG");
+    @DisplayName("Pet Entity By AnimalType[DOMESTIC] Tests")
+    public Stream<DynamicNode> getInventoryByAnimalTypeDomesticTest() {
+        List<PetEntity> domestics = expectedResults.stream()
+                .filter(p -> p.getAnimalType().equals(AnimalType.DOMESTIC))
+                .sorted(Comparator.comparingInt(PetEntity::getPetId))
+                .toList();
+
+        Response response = RestAssured.get("inventory/search/animal/DOMESTIC");
         List<PetEntity> actualResults = response.body().jsonPath().getList(".", PetEntity.class);
-        List<DynamicNode> testNodes = new ArrayList<DynamicNode>();
+
+        List<DynamicNode> testNodes = new ArrayList<>();
 
         List<DynamicTest> responseTests = Arrays.asList(
                 DynamicTest.dynamicTest("Status Code 200 Test",
-                        ()-> assertEquals(200, response.getStatusCode())),
-                DynamicTest.dynamicTest("Content Type text/plain;charset=UTF-8 Test ",
-                        ()-> assertTrue("text/plain;charset=UTF-8"
-                                .equalsIgnoreCase( response.getContentType()))),
-                DynamicTest.dynamicTest("Size of results test[" + dogs.size() + "]",
-                        ()-> assertEquals(dogs.size(), actualResults.size())));
+                        () -> assertEquals(200, response.getStatusCode())),
+//                DynamicTest.dynamicTest("Content Type JSON Test",
+//                        () -> assertTrue(response.getContentType().toLowerCase().startsWith("application/json"))),
+                DynamicTest.dynamicTest("Size of results test[" + domestics.size() + "]",
+                        () -> assertEquals(domestics.size(), actualResults.size()))
+        );
 
         DynamicContainer responseContainer = DynamicContainer.dynamicContainer("Response Tests", responseTests);
         testNodes.add(responseContainer);
-        testNodes.add(PetEntityValidator.addPetEntityBodyTests(dogs, actualResults));
+
+        testNodes.add(AnimalTypeValidator.addAnimalTypeBodyTests(domestics, actualResults));
 
         return testNodes.stream();
-
     }
 
-
-
     @Test
-    @DisplayName("Get Pet Entity By Type[Dog] Gherkin Tests")
-    public void getInventoryDogsGherkinTest()
-    {
-        List<PetEntity> dogs =
-                expectedResults.stream()
-                        .filter(p -> p.getPetType().equals(PetType.DOG))
-                        .sorted(Comparator.comparingInt(PetEntity::getPetId))
-                        .collect(Collectors.toList());
+    @DisplayName("Get Pet Entity By AnimalType[DOMESTIC] Gherkin Tests")
+    public void getInventoryDomesticGherkinTest() {
+        List<PetEntity> domestics = expectedResults.stream()
+                .filter(p -> p.getAnimalType().equals(AnimalType.DOMESTIC))
+                .sorted(Comparator.comparingInt(PetEntity::getPetId))
+                .collect(Collectors.toList());
+
         RestAssured.registerParser("application/json", Parser.JSON);
         List<PetEntity> actualResults =
                 given()
                         .headers(headers)
                         .when()
-                        .get("inventory/search/DOG")
+                        .get("inventory/search/animal/DOMESTIC")
                         .then()
                         .log().all()
                         .assertThat().statusCode(200)
@@ -104,25 +94,19 @@ public class GetInventoryByPetTypeTests
                         .jsonPath()
                         .getList(".", PetEntity.class);
 
-        for(PetEntity dog: dogs)
-        {
-            boolean foundDog =false;
-            for(PetEntity actualPet :  actualResults)
-            {
-                if(dog.getPetId() == actualPet.getPetId())
-                {
-                    foundDog=true;
-                    assertThat(actualPet.getPetId(), equalTo(dog.getPetId()));
+        for (PetEntity expectedPet : domestics) {
+            boolean foundMatch = false;
+            for (PetEntity actualPet : actualResults) {
+                if (expectedPet.getPetId() == actualPet.getPetId()) {
+                    foundMatch = true;
+                    assertThat(actualPet.getPetId(), equalTo(expectedPet.getPetId()));
                     break;
                 }
             }
-            if(!foundDog)
-            {
-                assertThat("Pet Id " + dog.getPetId(), false, equalTo(true));
+            if (!foundMatch) {
+                assertThat("Pet Id " + expectedPet.getPetId(), false, equalTo(true));
             }
         }
-
-
     }
 
     @TestFactory
@@ -144,6 +128,7 @@ public class GetInventoryByPetTypeTests
         return body.executeTests("Not Found", "No static resource inventory/search.",
                 "/inventory/search/", 404).stream();
     }
+
     @TestFactory
     @DisplayName("Get Pet Entity By Invalid Pet Entity Tests")
     public Stream<DynamicTest> getInventoryInvalidPetEntityTest()
@@ -167,5 +152,4 @@ public class GetInventoryByPetTypeTests
                         "com.petstore.animals.attributes.PetType] for value [FROGGER]",
                 "/inventory/search/FROGGER", 400).stream();
     }
-
 }

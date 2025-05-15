@@ -1,4 +1,4 @@
-package com.petstoreservices.service;
+package funtionaltests;
 
 
 import com.petstore.AnimalType;

@@ -79,7 +79,8 @@ public class VerificationMatcherExamplesTests {
     {
         List mock = mock(List.class);
         //arrange
-        Mockito.when(mock.addAll(argThat(new IsListOfTwoElements()))).thenReturn(true);
+        // Modified code to accept list of any size, not just a list consisting of two elements
+        Mockito.when(mock.addAll(anyList())).thenReturn(true);
         //act
         mock.addAll(Arrays.asList("one", "two", "three"));
         //assert verify(mock, times(0)).addAll(argThat(list -> list.contains("three")));
